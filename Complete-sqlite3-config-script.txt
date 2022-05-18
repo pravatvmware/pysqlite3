@@ -1,0 +1,50 @@
+#!/bin/bash
+
+yum update -y
+yum -y groupinstall "Development Tools"
+yum -y install openssl-devel bzip2-devel libffi-devel
+yum -y install wget
+cd /opt/
+wget https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tgz
+tar xvf Python-3.9.10.tgz
+
+cd Python-3.9.10
+./configure --enable-optimizations
+sudo make altinstall
+/usr/local/bin/python3.9 --version
+/usr/local/bin/python3.9 -m pip install --upgrade pip
+/usr/local/bin/pip3.9 --version
+cd
+
+mkdir /root/databases
+cd /root/databases
+yum install wget -y
+wget https://sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
+tar -xvzf sqlite-autoconf-3380500.tar.gz
+cd /root/databases/sqlite-autoconf-3380500
+./configure --prefix=/usr                 --disable-static              --enable-fts5                 CPPFLAGS="-DSQLITE_ENABLE_FTS3=1            \
+                        -DSQLITE_ENABLE_FTS4=1            \
+                        -DSQLITE_ENABLE_COLUMN_METADATA=1 \
+                        -DSQLITE_ENABLE_UNLOCK_NOTIFY=1   \
+                        -DSQLITE_ENABLE_DBSTAT_VTAB=1     \
+                        -DSQLITE_SECURE_DELETE=1          \
+                        -DSQLITE_ENABLE_FTS3_TOKENIZER=1" && make
+
+make install
+sqlite3 --version
+
+
+/usr/local/bin/pip3.9 install virtualenv
+/usr/local/bin/python3.9 -m virtualenv -p /usr/local/bin/python3.9 sqlite338
+cd /root/databases/sqlite-autoconf-3380500/sqlite338/
+source bin/activate
+yum install python3-devel -y
+./configure
+git clone https://github.com/coleifer/pysqlite3
+cd /root/databases/sqlite-autoconf-3380500/sqlite338/pysqlite3/
+cp /root/databases/sqlite-autoconf-3380500/sqlite3.[ch] .
+/usr/local/bin/python3.9 setup.py build_static
+/usr/local/bin/python3.9 setup.py install
+/usr/local/bin/python3.9 setup.py build_ext -i
+cd ..
+/usr/local/bin/python3.9 -c "import pysqlite3"
